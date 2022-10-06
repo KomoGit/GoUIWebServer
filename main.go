@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -62,13 +61,13 @@ func SetControlPanel() { //GUI
 func receivePort(port string) {
 	if port != "" { //First if checks if port isn't empty.
 		if _, err := strconv.Atoi(port); err == nil { //Second if checks whether input is a number.
-			fmt.Printf("Starting server at port %s.\n", port)
+			log.Printf("Starting server at port %s.\n", port)
 			startServer(port)
 		} else {
-			fmt.Printf("%s is not a valid port.\n", port)
+			log.Printf("%s is not a valid port.\n", port)
 		}
 	} else {
-		fmt.Println("Port cannot be empty, use 8080 if you wish to use default.")
+		log.Println("Port cannot be empty, use 8080 if you wish to use default.")
 	}
 }
 
