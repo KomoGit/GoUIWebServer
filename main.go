@@ -16,8 +16,6 @@ var serverStarted = false
 
 func main() {
 	SetControlPanel()
-
-	//fmt.Printf("Starting server at port: ",port)
 }
 
 // TODO: Ensure the port input is only numbers. (Done)
@@ -44,14 +42,14 @@ func SetControlPanel() { //GUI
 }
 
 func receivePort(port string) {
-	if port != "" { //First if checks if port is empty.
+	if port != "" { //First if checks if port isn't empty.
 		if _, err := strconv.Atoi(port); err == nil { //Second if checks whether input is a number.
 			fmt.Printf("Trying port %q.\n", port)
 			//serverStarted = true
-		} else { //If it is this message will be given out.
+		} else {
 			fmt.Printf("%s is not a valid port.\n", port)
 		}
-	} else { //If it is this message will be given out.
+	} else {
 		fmt.Println("Port cannot be empty, use 8080 if you wish to use default.")
 	}
 }
@@ -65,4 +63,10 @@ func startServer(path string) {
 	http.Handle("/", fileServer)
 	//http.HandleFunc("/form",formHandler)
 	//http.HandleFunc("/Readme",readmeHandler)
+}
+
+func determineArgs(arg string) {
+	// Determine arguments given to the user. First one should be directory.
+	switch arg {
+	}
 }
