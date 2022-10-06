@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -13,6 +14,8 @@ import (
 )
 
 var serverStarted = false
+var width float32 = 480
+var height float32 = 480
 
 func main() {
 	SetControlPanel()
@@ -23,11 +26,14 @@ func main() {
 // Ensure that port panel cannot be left empty. (Done)
 // Allow user to change directory to one they wish. Using GUI.
 
+// Current Issues; The GUI part of application freezes up when the server is running.
+// Logs do not get sent out to inform the user on success.
+
 func SetControlPanel() { //GUI
 	a := app.New()
-	win := a.NewWindow("GoUIWebServer") //Creates a new window and gives it Title.
-	win.SetFixedSize(true)              //Ensures you cant resize.
-	win.Resize(fyne.NewSize(480, 480))  //When app launches the window will be in this dimensions.
+	win := a.NewWindow("GoUIWebServer")
+	win.SetFixedSize(true)
+	win.Resize(fyne.NewSize(width, height)) //When app launches the window will be in this dimensions.
 	//Fyne boilerplate code.
 
 	input := widget.NewEntry()
@@ -45,7 +51,8 @@ func receivePort(port string) {
 	if port != "" { //First if checks if port isn't empty.
 		if _, err := strconv.Atoi(port); err == nil { //Second if checks whether input is a number.
 			fmt.Printf("Trying port %q.\n", port)
-			//serverStarted = true
+			startServer(port)
+			serverStarted = true
 		} else {
 			fmt.Printf("%s is not a valid port.\n", port)
 		}
@@ -53,16 +60,21 @@ func receivePort(port string) {
 		fmt.Println("Port cannot be empty, use 8080 if you wish to use default.")
 	}
 }
+
 func receiveDirectory() {
 
 }
-func startServer(path string) {
-	path = "./static"
-	//fileServer := http.FileServer(http.Dir("./static")) //Directory that holds html files.
-	fileServer := http.FileServer(http.Dir("./%s" + path))
+
+// Start server should also receive path string to determine lcoation of directory.
+func startServer(port string) {
+	fileServer := http.FileServer(http.Dir("./static")) //Directory that holds html files.
 	http.Handle("/", fileServer)
-	//http.HandleFunc("/form",formHandler)
-	//http.HandleFunc("/Readme",readmeHandler)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal(err)
+	}
+	if serverStarted {
+		fmt.Println("Success, server is active in port: %s" + port)
+	}
 }
 
 func determineArgs(arg string) {
