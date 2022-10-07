@@ -24,15 +24,24 @@ func main() {
 // Ensure that text of start server changes to stop server if server is already running.
 // Ensure that port panel cannot be left empty. (Done)
 // Allow user to change directory to one they wish. Using GUI and commandline arguments.
-// Ensure the application doesn't close when facing an error (Specfically if the port is already in use.)
 
-/* Ensure that a link is generated for each html file found in static folder.
-# The urls should be automatically created without any additional modifications to the script itself.
-# Ensure that if the link doesn't exist, it goes straight to 404.
+/*
+	Ensure that a link is generated for each html file found in static folder.
+	The urls should be automatically created without any additional modifications to the script itself.
+	Ensure that if the link doesn't exist, it goes straight to 404.
 */
 
-// Current Issues; The GUI part of application freezes up when the server is running.
-// Logs do not get sent out to inform the user on success.
+/*
+	Current Issues;
+
+	#1 The GUI part of application freezes up when the server is running.
+	Potential Fix: Create a separate goroutine for the web handler. Keep GUI elements in Main thread.
+
+	#2 The application cannot recover from panic, if the port given is in use the application closes.
+	Potential Fix: Use go's version of try catch: 'defer'
+
+	#3 Logs do not get sent out to inform the user on success.
+*/
 
 func determineArgs(arg string) {
 	// Determine arguments given to the user. First one should be directory.
@@ -67,7 +76,8 @@ func receivePort(port string) {
 			log.Printf("%s is not a valid port.\n", port)
 		}
 	} else {
-		log.Println("Port cannot be empty, use 8080 if you wish to use default.")
+		log.Println("Port is empty, using default 8080")
+		startServer("8080")
 	}
 }
 
