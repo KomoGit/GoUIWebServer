@@ -14,7 +14,12 @@ import (
 
 // Manipulate the window settings here.
 var width float32 = 480
-var height float32 = 480
+var height float32 = 240
+
+//var serverRunning = false
+
+var a = app.New()
+var win = a.NewWindow("GoUIWebServer")
 
 func main() {
 	SetControlPanel()
@@ -35,12 +40,13 @@ func main() {
 	Current Issues;
 
 	#1 The GUI part of application freezes up when the server is running.
-	Potential Fix: Create a separate goroutine for the web handler. Keep GUI elements in Main thread.
+	Potential Fix: Create a separate goroutine for the web handler. Keep GUI elements in Main thread. (Done)
 
 	#2 The application cannot recover from panic, if the port given is in use the application closes.
 	Potential Fix: Use go's version of try catch: 'defer'
 
 	#3 Logs do not get sent out to inform the user on success.
+	Potential Fix:
 */
 
 func determineArgs(arg string) {
@@ -50,14 +56,14 @@ func determineArgs(arg string) {
 }
 
 func SetControlPanel() { //GUI
-	a := app.New()
-	win := a.NewWindow("GoUIWebServer")
+	// a := app.New()
+	// win := a.NewWindow("GoUIWebServer")
 	win.SetFixedSize(true)
 	win.Resize(fyne.NewSize(width, height)) //When app launches the window will be in this dimensions.
 	//Fyne boilerplate code.
 
 	input := widget.NewEntry()
-	input.SetPlaceHolder("Enter a port i.e :8080")
+	input.SetPlaceHolder("Enter a port i.e 8080. Use numbers only.")
 
 	//Multiple buttons can be and should be added to a single "content"
 	content := container.NewVBox(
@@ -66,25 +72,30 @@ func SetControlPanel() { //GUI
 	win.SetContent(content)
 	win.ShowAndRun()
 }
+func ConfigureControlPanel(port string) {
+	win.SetTitle("GoUIWebServer - Running at: " + port)
+}
 
+// Perhaps this should be decoupled as well.
 func receivePort(port string) {
 	if port != "" { //First if checks if port isn't empty.
 		if _, err := strconv.Atoi(port); err == nil { //Second if checks whether input is a number.
 			log.Printf("Starting server at port %s.\n", port)
-			startServer(port)
+			go startServer(port)
 		} else {
 			log.Printf("%s is not a valid port.\n", port)
 		}
 	} else {
-		log.Println("Port is empty, using default 8080")
-		startServer("8080")
+		log.Println("Port cannot be null!")
 	}
 }
 
-// Start server should also receive path string to determine lcoation of directory.
+// Start server should also receive path string to determine location of directory.
+// TODO: Decouple this from main thread. Main thread should give signals to run or stop this method but not run the method itself. (DONE)
 func startServer(port string) {
 	fileServer := http.FileServer(http.Dir("./static")) //Directory that holds html files.
 	http.Handle("/", fileServer)
+	ConfigureControlPanel(port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}
