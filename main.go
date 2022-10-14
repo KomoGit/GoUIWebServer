@@ -80,17 +80,22 @@ func SetControlPanel() { //GUI
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Enter a port i.e 8080. Use numbers only.")
 
-	openFile := widget.NewButton("Select HTML Directory", func() {
-		file_Dialog := dialog.NewFileOpen(
-			func(r fyne.URIReadCloser, _ error) {
-				directoryLocation = r.URI().String()
+	openFolder := widget.NewButton("Select HTML Directory", func() {
+		// file_Dialog := dialog.NewFileOpen(
+		// 	func(r fyne.URIReadCloser, _ error) {
+		// 		directoryLocation = r.URI().String()
+		// 	}, win)
+		// file_Dialog.Show()
+		folder_Dialog := dialog.NewFolderOpen(
+			func(lu fyne.ListableURI, _ error) {
+				directoryLocation = lu.String()
 			}, win)
-		file_Dialog.Show()
+		folder_Dialog.Show()
 	})
 
 	//Multiple buttons can be and should be added to a single "content"
 	content := container.NewVBox(
-		input, widget.NewButton("Start Server", func() { receivePort(input.Text) }), openFile, //Start Server button.
+		input, widget.NewButton("Start Server", func() { receivePort(input.Text) }), openFolder, //Start Server button.
 		exitBtn)
 
 	win.SetContent(content)
