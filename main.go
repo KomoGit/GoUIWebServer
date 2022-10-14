@@ -81,11 +81,6 @@ func SetControlPanel() { //GUI
 	input.SetPlaceHolder("Enter a port i.e 8080. Use numbers only.")
 
 	openFolder := widget.NewButton("Select HTML Directory", func() {
-		// file_Dialog := dialog.NewFileOpen(
-		// 	func(r fyne.URIReadCloser, _ error) {
-		// 		directoryLocation = r.URI().String()
-		// 	}, win)
-		// file_Dialog.Show()
 		folder_Dialog := dialog.NewFolderOpen(
 			func(lu fyne.ListableURI, _ error) {
 				directoryLocation = lu.String()
@@ -145,7 +140,9 @@ func receivePort(port string) {
 
 // Start server should also receive path string to determine location of directory.
 func startServer(port string, directory string) {
-	fileServer := http.FileServer(http.Dir("./static")) //Directory that holds html files.
+	//fileServer := http.FileServer(http.Dir("./static")) //Directory that holds html files.
+	fileServer := http.FileServer(http.Dir("./" + directory))
+	log.Println(directory)
 	http.Handle("/", fileServer)
 
 	ControlPanelStarted(port)
