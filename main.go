@@ -141,10 +141,14 @@ func receivePort(port string) {
 // Start server should also receive path string to determine location of directory.
 func startServer(port string, directory string) {
 	//fileServer := http.FileServer(http.Dir("./static")) //Directory that holds html files.
-	fileServer := http.FileServer(http.Dir("./" + directory))
+	if directory == "" {
+		fileServer := http.FileServer(http.Dir("./static"))
+		http.Handle("/", fileServer)
+	} else {
+		fileServer := http.FileServer(http.Dir("./" + directory))
+		http.Handle("/", fileServer)
+	}
 	log.Println(directory)
-	http.Handle("/", fileServer)
-
 	ControlPanelStarted(port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
