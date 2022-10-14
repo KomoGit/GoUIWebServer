@@ -9,16 +9,21 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
 // Manipulate the window settings here.
 var width float32 = 480
 var height float32 = 240
+var consoleEntry int = 0
+var directoryLocation string
+
+var consoleOutput = make([]string, 0)
 
 //var serverRunning = false
 
-var stopAction = false
+//var stopAction = false
 
 // Global so other functions can access this as well.
 var a = app.New()
@@ -27,7 +32,9 @@ var win = a.NewWindow("GoUIWebServer")
 var exitBtn = widget.NewButton("Exit Application", func() { os.Exit(0) }) //Fyne Button to shut app down.
 
 func main() {
+	SetConsolePanel()
 	SetControlPanel()
+	a.Run()
 }
 
 // TODO: Ensure the port input is only numbers. (Done)
@@ -60,6 +67,11 @@ func main() {
 // 	}
 // }
 
+//TODO : Here is what we need to do to implement CONSOLE.
+/*
+# Create a new window to contain Console,
+# Insert data into the new console via slice,
+*/
 func SetControlPanel() { //GUI
 	win.SetFixedSize(true)
 	win.Resize(fyne.NewSize(width, height)) //When app launches the window will be in this dimensions.
@@ -68,33 +80,58 @@ func SetControlPanel() { //GUI
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Enter a port i.e 8080. Use numbers only.")
 
+	openFile := widget.NewButton("Select HTML Directory", func() {
+		file_Dialog := dialog.NewFileOpen(
+			func(r fyne.URIReadCloser, _ error) {
+				directoryLocation = r.URI().String()
+			}, win)
+		file_Dialog.Show()
+	})
+
 	//Multiple buttons can be and should be added to a single "content"
 	content := container.NewVBox(
-		input, widget.NewButton("Start Server", func() { receivePort(input.Text) }), //Start Server button.
+		input, widget.NewButton("Start Server", func() { receivePort(input.Text) }), openFile, //Start Server button.
 		exitBtn)
-	//widget.NewButton("Exit Application", func() { os.Exit(0) })) //Exit button.
+
 	win.SetContent(content)
-	win.ShowAndRun()
+	win.Show()
 }
 
 func ControlPanelStarted(port string) { //Control panel when the server is started.
 	win.SetTitle("GoUIWebServer - Running at: " + port)
 	content := container.NewVBox(
-		widget.NewButton("Stop Server", func() { stopActionController() }), //Start Server button.
+		widget.NewButton("Stop Server", func() { /*Insert Stop Action Controller here.*/ }), //Start Server button.
 		exitBtn)
-	//widget.NewButton("Exit Application", func() { os.Exit(0) })) //Exit button. Should be moved into it's own container free from whether server is started or not.
-
 	win.SetContent(content)
+}
+
+func SetConsolePanel() {
+	consoleWin := a.NewWindow("GoServer - Console")
+	consoleWin.Resize(fyne.NewSize(width, height))
+	list := widget.NewList(
+		func() int {
+			return len(consoleOutput)
+		},
+		func() fyne.CanvasObject {
+			return widget.NewLabel("template")
+		},
+		func(i widget.ListItemID, o fyne.CanvasObject) {
+			o.(*widget.Label).SetText(consoleOutput[i])
+		})
+	consoleWin.SetContent(list)
+	consoleWin.Show()
 }
 
 // Perhaps this should be decoupled as well.
 func receivePort(port string) {
-	if port != "" { //First if checks if port isn't empty.
+	if port != "" {
 		if _, err := strconv.Atoi(port); err == nil { //Second if checks whether input is a number.
-			log.Printf("Starting server at port %s.\n", port)
-			go startServer(port)
+			//log.Printf("Starting server at port %s.\n", port)
+			consoleOutput = append(consoleOutput, "Starting server at port: "+port) //Move this to its own method.                                                  //Instead of running console everytime we should make a  method that updates the console.
+			go startServer(port, directoryLocation)
 		} else {
-			log.Printf("%s is not a valid port.\n", port)
+			//log.Printf("%s is not a valid port.\n", port)
+			consoleOutput = append(consoleOutput, port+" is not a valid port\n")
 		}
 	} else {
 		log.Println("Port cannot be null!")
@@ -102,24 +139,12 @@ func receivePort(port string) {
 }
 
 // Start server should also receive path string to determine location of directory.
-// TODO: Decouple this from main thread. Main thread should give signals to run or stop this method but not run the method itself. (DONE)
-func startServer(port string) {
+func startServer(port string, directory string) {
 	fileServer := http.FileServer(http.Dir("./static")) //Directory that holds html files.
 	http.Handle("/", fileServer)
 
 	ControlPanelStarted(port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
-	}
-}
-
-// // A terrible way to control applications start stop, but for now it will do.
-func stopActionController() {
-	if stopAction {
-		stopAction = false
-		log.Println("false")
-	} else {
-		stopAction = true
-		log.Println("true")
 	}
 }
