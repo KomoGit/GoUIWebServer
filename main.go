@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -20,10 +21,6 @@ var consoleEntry int = 0
 var directoryLocation string
 
 var consoleOutput = make([]string, 0)
-
-//var serverRunning = false
-
-//var stopAction = false
 
 // Global so other functions can access this as well.
 var a = app.New()
@@ -97,7 +94,9 @@ func SetControlPanel() { //GUI
 	win.Show()
 }
 
-func ControlPanelStarted(port string) { //Control panel when the server is started.
+//Control panel when the server is started.
+
+func ControlPanelStarted(port string) {
 	win.SetTitle("GoUIWebServer - Running at: " + port)
 	content := container.NewVBox(
 		widget.NewButton("Stop Server", func() { /*Insert Stop Action Controller here.*/ }), //Start Server button.
@@ -105,6 +104,7 @@ func ControlPanelStarted(port string) { //Control panel when the server is start
 	win.SetContent(content)
 }
 
+// CONSOLE
 func SetConsolePanel() {
 	consoleWin := a.NewWindow("GoServer - Console")
 	consoleWin.Resize(fyne.NewSize(width, height))
@@ -126,11 +126,9 @@ func SetConsolePanel() {
 func receivePort(port string) {
 	if port != "" {
 		if _, err := strconv.Atoi(port); err == nil { //Second if checks whether input is a number.
-			//log.Printf("Starting server at port %s.\n", port)
 			consoleOutput = append(consoleOutput, "Starting server at port: "+port) //Move this to its own method.                                                  //Instead of running console everytime we should make a  method that updates the console.
 			go startServer(port, directoryLocation)
 		} else {
-			//log.Printf("%s is not a valid port.\n", port)
 			consoleOutput = append(consoleOutput, port+" is not a valid port\n")
 		}
 	} else {
@@ -138,17 +136,23 @@ func receivePort(port string) {
 	}
 }
 
+func filterInput(dir string) string {
+	res := strings.Split(dir, "file://")
+	userSelectDir := string(res[len(res)-1])
+	return userSelectDir
+}
+
 // Start server should also receive path string to determine location of directory.
 func startServer(port string, directory string) {
-	//fileServer := http.FileServer(http.Dir("./static")) //Directory that holds html files.
 	if directory == "" {
 		fileServer := http.FileServer(http.Dir("./static"))
 		http.Handle("/", fileServer)
 	} else {
-		fileServer := http.FileServer(http.Dir("./" + directory))
+		userSelectDir := filterInput(directory)
+		fileServer := http.FileServer(http.Dir(userSelectDir))
 		http.Handle("/", fileServer)
+		log.Println(userSelectDir)
 	}
-	log.Println(directory)
 	ControlPanelStarted(port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
