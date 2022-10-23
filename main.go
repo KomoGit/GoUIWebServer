@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -14,13 +15,18 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// Manipulate the window settings here.
-var width float32 = 480
-var height float32 = 240
-var consoleEntry int = 0
-var directoryLocation string
+// All global variables are inserted here.
+var (
+	// Manipulate the window settings here.
+	width             float32 = 480
+	height            float32 = 240
+	consoleEntry      int     = 0
+	directoryLocation string
+	stopServer        = false
+	consoleOutput     = make([]string, consoleEntry)
+)
 
-var consoleOutput = make([]string, 0)
+// Manipulate the window settings here.
 
 // Global so other functions can access this as well.
 var a = app.New()
@@ -47,22 +53,14 @@ func main() {
 
 /*
 	Current Issues;
-
-	#1 The GUI part of application freezes up when the server is running.
-	Potential Fix: Create a separate goroutine for the web handler. Keep GUI elements in Main thread. (Done)
-
 	#2 The application cannot recover from panic, if the port given is in use the application closes.
 	Potential Fix: Use go's version of try catch: 'defer'
 
 	#3 Logs do not get sent out to inform the user on success.
 	Potential Fix:
-*/
 
-// func determineArgs(arg string) {
-// 	// Determine arguments given to the user. First one should be directory.
-// 	switch arg {
-// 	}
-// }
+	#4 Create a channel to control and stop the goroutines of the program.
+*/
 
 //TODO : Here is what we need to do to implement CONSOLE.
 /*
@@ -80,7 +78,9 @@ func SetControlPanel() { //GUI
 	openFolder := widget.NewButton("Select HTML Directory", func() {
 		folder_Dialog := dialog.NewFolderOpen(
 			func(lu fyne.ListableURI, _ error) {
-				directoryLocation = lu.String()
+				if lu != nil {
+					directoryLocation = lu.String()
+				}
 			}, win)
 		folder_Dialog.Show()
 	})
@@ -99,7 +99,7 @@ func SetControlPanel() { //GUI
 func ControlPanelStarted(port string) {
 	win.SetTitle("GoUIWebServer - Running at: " + port)
 	content := container.NewVBox(
-		widget.NewButton("Stop Server", func() { /*Insert Stop Action Controller here.*/ }), //Start Server button.
+		widget.NewButton("Stop Server", func() { /*Insert Stop Action Controller here.*/ stopServer = true }), //Start Server button.
 		exitBtn)
 	win.SetContent(content)
 }
@@ -127,7 +127,8 @@ func receivePort(port string) {
 	if port != "" {
 		if _, err := strconv.Atoi(port); err == nil { //Second if checks whether input is a number.
 			consoleOutput = append(consoleOutput, "Starting server at port: "+port) //Move this to its own method.                                                  //Instead of running console everytime we should make a  method that updates the console.
-			go startServer(port, directoryLocation)
+			//go startServer(port, directoryLocation)
+			serverController(port, directoryLocation)
 		} else {
 			consoleOutput = append(consoleOutput, port+" is not a valid port\n")
 		}
@@ -136,6 +137,7 @@ func receivePort(port string) {
 	}
 }
 
+// Removes 'file://' from the user given directory
 func filterInput(dir string) string {
 	res := strings.Split(dir, "file://")
 	userSelectDir := string(res[len(res)-1])
@@ -158,3 +160,19 @@ func startServer(port string, directory string) {
 		log.Fatal(err)
 	}
 }
+func serverController(port string, directory string) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		go startServer(port, directory)
+		log.Println("Server Started")
+		if stopServer {
+			log.Println("Server Stopped")
+			wg.Done()
+		}
+	}()
+}
+
+//Create a server controller that can control the flow of work of program.
+//Server controller should have a waitground. Wg Done should be called when the user clicks Stop Server in UI.
+//Once that is triggered, it should use a bool method to stop server.
